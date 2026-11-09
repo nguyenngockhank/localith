@@ -121,7 +121,7 @@ Default settings:
 ## 4. Options
 
 ```bash
-npm run scan -- https://admin.dev.frf.app.fanzeal.com --depth 3 --max-pages 100 --delay-ms 1200
+npm run scan -- https://example.com --depth 3 --max-pages 100 --delay-ms 1200
 ```
 
 Available options:
@@ -176,15 +176,15 @@ Only use this on sites you own or have permission to access.
 When crawling list or collection pages (e.g. issue trackers, ecommerce products, user records), deep link structures often generate hundreds of repetitive URLs with dynamic IDs:
 
 ```text
-https://admin.dev.frf.app.fanzeal.com/report-issues/ISS-GPDPFI
-https://admin.dev.frf.app.fanzeal.com/report-issues/ISS-J74ENW
-https://admin.dev.frf.app.fanzeal.com/report-issues/ISS-FOTF0M
-https://admin.dev.frf.app.fanzeal.com/report-issues/ISS-HJEG0K
+https://example.com/report-issues/ISS-GPDPFI
+https://example.com/report-issues/ISS-J74ENW
+https://example.com/report-issues/ISS-FOTF0M
+https://example.com/report-issues/ISS-HJEG0K
 ...
 ```
 
 For links at **`depth > 1`**:
-- The crawler automatically detects dynamic parameterized patterns (e.g. `https://admin.dev.frf.app.fanzeal.com/report-issues/{{id}}`).
+- The crawler automatically detects dynamic parameterized patterns (e.g. `https://example.com/report-issues/{{id}}`).
 - Crawls up to **3 sample items** (configurable via `--max-pattern-pages`).
 - Marks subsequent matching items as `status: "skipped"` with the pattern group name.
 - Allows the crawler to continue discovering and analyzing other unique sections of the website without consuming the crawl quota on identical template instances.
@@ -248,7 +248,7 @@ Server runs on `http://localhost:3000` (or configured `PORT`).
 curl -X POST http://localhost:3000/api/knowledge \
   -H "Content-Type: application/json" \
   -d '{
-    "runDir": "reports/admin-dev-frf-app-fanzeal-com-e432dd50"
+    "runDir": "reports/example-com-5ab12345"
   }'
 ```
 
@@ -334,10 +334,10 @@ You can index via CLI or HTTP API with a **dynamic collection name**:
 npm run rag:index
 
 # Index with a custom dynamic collection name
-npm run rag:index -- --collection fanzeal_admin
+npm run rag:index -- --collection example_admin
 
 # Index a specific report or knowledge file
-npm run rag:index -- reports/admin-dev-frf-app-fanzeal-com-e432dd50 --collection fanzeal_admin
+npm run rag:index -- reports/example-com-5ab12345 --collection example_admin
 ```
 
 #### Via HTTP Endpoint:
@@ -346,8 +346,8 @@ npm run rag:index -- reports/admin-dev-frf-app-fanzeal-com-e432dd50 --collection
 curl -X POST http://localhost:3000/api/rag/index \
   -H "Content-Type: application/json" \
   -d '{
-    "collectionName": "fanzeal_admin",
-    "runDir": "reports/admin-dev-frf-app-fanzeal-com-e432dd50",
+    "collectionName": "example_admin",
+    "runDir": "reports/example-com-5ab12345",
     "embedModel": "nomic-embed-text"
   }'
 ```
@@ -371,7 +371,7 @@ npm run rag:search -- "how do I reset password?"
 npm run rag:search -- "I want create quiz for my student how can I do it?"
 
 # Specify a collection:
-npm run rag:search -- "how can I create a report?" --collection fanzeal_admin
+npm run rag:search -- "how can I create a report?" --collection example_admin
 ```
 
 #### Via HTTP Endpoint:
@@ -382,13 +382,13 @@ curl -X POST http://localhost:3000/api/rag/search \
   -H "Content-Type: application/json" \
   -d '{
     "query": "how can I create a report?",
-    "collectionName": "fanzeal_admin",
+    "collectionName": "example_admin",
     "nResults": 5,
     "generateAnswer": true
   }'
 
 # Or GET /api/rag/search
-curl "http://localhost:3000/api/rag/search?q=how+can+I+create+a+report&collection=fanzeal_admin"
+curl "http://localhost:3000/api/rag/search?q=how+can+I+create+a+report&collection=example_admin"
 ```
 
 The response includes:
