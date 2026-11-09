@@ -1,0 +1,32 @@
+{
+  "name": "localith",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local-first website crawler using Vercel agent-browser and Ollama",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "scan": "tsx src/index.ts",
+    "serve": "tsx src/server.ts",
+    "analyze": "tsx src/analyzeKnowledgeCli.ts",
+    "rag:index": "tsx src/rag/indexKnowledgeCli.ts",
+    "rag:search": "tsx src/rag/searchRagCli.ts",
+    "test": "tsx --test test/**/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@chroma-core/default-embed": "^0.1.9",
+    "agent-browser": "^0.41.2",
+    "chromadb": "^3.5.0",
+    "dotenv": "^16.5.0",
+    "ollama": "^0.6.4",
+    "robots-parser": "^3.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.3"
+  }
+}
