@@ -14,6 +14,7 @@ import { buildKnowledgeMarkdown } from "./buildKnowledgeMarkdown.js";
 import { createFallbackScreenAnalysis } from "./createFallbackScreenAnalysis.js";
 import { persistScreenKnowledgeState } from "./persistScreenKnowledgeState.js";
 import { getOllamaClient } from "../ollama/getOllamaClient.js";
+import { chatText } from "../ollama/chatText.js";
 
 export interface GenerateKnowledgeOptions {
   ollamaUrl?: string;
@@ -127,24 +128,23 @@ Based on the agent-browser accessibility snapshot, return ONLY valid JSON matchi
 `;
 
   try {
-    const response = await client.chat({
+    const content = await chatText(client, {
       model,
       messages: [
         { role: "user", content: prompt }
       ],
       format: "json",
-      stream: false,
       options: {
         temperature: 0.2,
         num_ctx: 8192
       }
     });
 
-    if (!response.message?.content) {
+    if (!content) {
       throw new Error("Ollama returned an empty response.");
     }
 
-    return parseScreenAnalysis(response.message.content, group);
+    return parseScreenAnalysis(content, group);
   } catch (err) {
     console.warn(`  ⚠️ AI screen analysis fallback for ${group.pattern}: ${(err as Error).message}`);
     return createFallbackScreenAnalysis(group, titles);

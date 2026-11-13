@@ -138,7 +138,7 @@ export async function crawl(options: CrawlOptions): Promise<CrawlReport> {
   }
   console.log(`   Depth limit: ${options.maxDepth} | Target max pages: ${options.maxPages} (Remaining: ${Math.max(0, options.maxPages - actualCrawledPagesCount)})`);
   console.log(`   Pattern sampling: max ${maxPerPattern} pages per dynamic pattern group at depth > 1`);
-  console.log(`   AI: ${options.useAi ? options.ollamaModel : "disabled"}`);
+  console.log(`   AI: ${options.generateKnowledge ? options.ollamaModel : "disabled"}`);
   console.log(`   robots.txt: ${options.respectRobots ? "respected" : "ignored"}`);
   console.log(`   Auth wall handling: ${options.auth.enabled ? "enabled" : "disabled"}`);
   if (sessionRestored) {

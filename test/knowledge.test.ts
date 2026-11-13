@@ -8,9 +8,9 @@ import {
   groupPagesForKnowledge,
   loadPageSnapshot,
   generateCrawlKnowledge,
-  loadSavedScreenKnowledge,
-  persistScreenKnowledgeState
+  loadSavedScreenKnowledge
 } from "../src/knowledge/generateScreenKnowledge.js";
+import { persistScreenKnowledgeState } from "../src/knowledge/persistScreenKnowledgeState.js";
 import { buildKnowledgeMarkdown } from "../src/knowledge/buildKnowledgeMarkdown.js";
 import { handleRequest } from "../src/server.js";
 import type { CrawledPage, CrawlKnowledgeResult } from "../src/types.js";
@@ -154,7 +154,7 @@ test("loadPageSnapshot prioritizes in-memory snapshot, snapshotFile, and fallbac
     text: "Page fallback content",
     crawledAt: ""
   };
-  const snap2 = await loadPageSnapshot(pageWithFallback, "/tmp");
+  const snap2 = await loadPageSnapshot(pageWithFallback, os.tmpdir());
   assert.equal(snap2, "Page fallback content");
 });
 

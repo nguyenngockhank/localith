@@ -11,7 +11,7 @@ export function buildMarkdownReport(report: CrawlReport, runDir: string): string
         `- **Depth limit:** ${report.settings.maxDepth}`,
         `- **Page cap:** ${report.settings.maxPages}`,
         `- **Pattern cap:** ${report.settings.maxPagesPerPattern ?? 3} samples per dynamic pattern at depth > 1`,
-        `- **AI model:** ${report.settings.useAi ? report.settings.ollamaModel : "disabled"}`,
+        `- **AI model:** ${report.settings.generateKnowledge ? report.settings.ollamaModel : "disabled"}`,
         `- **robots.txt:** ${report.settings.respectRobots ? "respected" : "ignored"}`,
         `- **Auth wall handling:** ${report.settings.auth.enabled ? "enabled" : "disabled"}`,
         "",

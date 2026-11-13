@@ -63,16 +63,16 @@ Instead of manually collecting documents and feeding them into an AI assistant, 
 
 ## Requirements
 
-- macOS on Apple Silicon 
+- macOS (Apple Silicon or Intel), Linux, or Windows 10/11 x64
 - Node.js 24+ (required by current agent-browser releases)
 - Ollama installed and running
 - Internet access to the target website
 
 ## 1. Install
 
+Install Node.js 24+ first: `brew install node` on macOS, `winget install OpenJS.NodeJS` on Windows, or your distribution's package / [nodejs.org](https://nodejs.org) on Linux.
+
 ```bash
-# Install Node.js if needed
-brew install node
 
 # Install Ollama from https://ollama.com/download
 # Then pull the local model
@@ -80,11 +80,37 @@ ollama pull qwen3:4b
 
 # In the project folder
 npm install
-cp .env.example .env  # optional: edit model/crawl settings
+cp .env.example .env  # optional: edit model/crawl settings (PowerShell: Copy-Item .env.example .env)
 
 # Download Chrome for Testing used by agent-browser
 npx agent-browser install
 ```
+
+On Linux, run `npx agent-browser install --with-deps` instead to also install the system libraries Chrome needs.
+
+All `npm run ...` commands in this README work the same in Terminal, PowerShell, and Command Prompt.
+
+### Alternative: Docker Compose
+
+If you prefer not to install Node.js, Ollama, and ChromaDB yourself, the included `docker-compose.yml` starts all three together:
+
+```bash
+# Build the app image, start Ollama + ChromaDB, and download the models
+docker compose up -d --build
+
+# Run a scan inside the app container
+docker compose run --rm app npm run scan -- https://example.com --knowledge
+
+# Index and search
+docker compose run --rm app npm run rag:index
+docker compose run --rm app npm run rag:search -- "how can I create a report?"
+```
+
+- The web UI and API are served on `http://localhost:3000` (local interface only).
+- Scan output is written to `./reports` on your machine; models and vectors are kept in the `ollama-data` and `chroma-data` volumes.
+- The first start downloads the models, which takes a while. Follow progress with `docker compose logs -f ollama-pull`.
+- Model names come from `.env` when it exists (`OLLAMA_MODEL`, `OLLAMA_EMBED_MODEL`). `OLLAMA_URL` and `CHROMA_URL` are set by Compose and do not need editing.
+- Ollama runs on CPU in this setup. For GPU acceleration, add a GPU reservation to the `ollama` service or run Ollama natively.
 
 `agent-browser` documents the project-local installation flow as `npm install agent-browser` followed by `agent-browser install`.
 
@@ -231,12 +257,24 @@ npm run serve
 
 Server runs on `http://localhost:3000` (or configured `PORT`).
 
+### Web UI
+
+Open `http://localhost:3000/ui` in a browser (a browser visiting `http://localhost:3000` gets the same page; API clients still get the JSON guide). The UI needs no build step and loads nothing from the internet.
+
+- **Screen map** — every analysed screen grouped by top-level route, with filtering by text and screen type. Select a screen to see its purpose, workflows, data entities, UI components, keywords, and sample URLs.
+- **Crawled pages** — status, depth, and title of every page recorded in the scan.
+- **Ask** — question answering over an indexed collection.
+
+Reports without knowledge show a **Generate knowledge** button, and **Index for search** embeds the selected report into ChromaDB. The header shows whether Ollama and ChromaDB are reachable.
+
 ### Endpoints
 
 | Method | Endpoint | Description |
 |---|---|---|
 | `POST` | `/api/knowledge` (or `/api/analyze`) | Consumes crawl results to produce knowledge & keywords |
+| `GET` | `/ui` | Web UI |
 | `GET` | `/api/reports` | List all available scan report runs |
+| `GET` | `/api/reports/:id` | Crawl settings, totals, and page list for a report run |
 | `GET` | `/api/reports/:id/knowledge` | Fetch saved knowledge JSON for a specific report run |
 | `POST` | `/api/reports/:id/knowledge` | Generate/regenerate knowledge for a specific report run |
 | `GET` | `/health` | Server and Ollama connection status |
@@ -413,9 +451,9 @@ curl http://localhost:3000/api/rag/collections
 
 ## Troubleshooting
 
-### `agent-browser: command not found`
+### `Could not run agent-browser`
 
-The project installs `agent-browser` locally. Run `npx agent-browser --help` to verify the binary is available. When launched through `npm run scan`, npm adds the local binary directory to PATH.
+The project installs `agent-browser` locally and launches it from `node_modules` directly, so it does not need to be on PATH. Run `npm install`, then `npx agent-browser --help` to verify it works. To use a different build, set `AGENT_BROWSER_BIN` to its path.
 
 ### Ollama connection error
 
