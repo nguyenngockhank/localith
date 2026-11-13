@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import path from "node:path";
 import {
   calculateWaitTime,
   getPagePrefix,
@@ -31,10 +32,11 @@ test("getPagePrefix formats page numbers with 4-digit padding", () => {
 });
 
 test("getPageArtifactPaths generates snapshot, json, and screenshot paths", () => {
-  const paths = getPageArtifactPaths("/tmp/reports/pages", "page-0001");
-  assert.equal(paths.snapshotPath, "/tmp/reports/pages/page-0001.snapshot.txt");
-  assert.equal(paths.dataPath, "/tmp/reports/pages/page-0001.json");
-  assert.equal(paths.screenshotPath, "/tmp/reports/pages/page-0001.png");
+  const pagesDir = path.join("tmp", "reports", "pages");
+  const paths = getPageArtifactPaths(pagesDir, "page-0001");
+  assert.equal(paths.snapshotPath, path.join(pagesDir, "page-0001.snapshot.txt"));
+  assert.equal(paths.dataPath, path.join(pagesDir, "page-0001.json"));
+  assert.equal(paths.screenshotPath, path.join(pagesDir, "page-0001.png"));
 });
 
 test("extractInScopeUrls normalizes and keeps only in-scope links", () => {
