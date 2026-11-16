@@ -8,6 +8,7 @@ import { getChromaClient } from "./chromaClient/chromaClient.js";
 import { sanitizeCollectionName } from "./chromaClient/sanitizeCollectionName.js";
 import { generateEmbeddings } from "./indexKnowledge/indexKnowledge.js";
 import { getOllamaClient } from "../ollama/getOllamaClient.js";
+import { chatText } from "../ollama/chatText.js";
 
 /**
  * Searches the ChromaDB RAG database using vector similarity and returns matching screens,
@@ -103,7 +104,7 @@ export async function searchRag(
 /**
  * Synthesizes an accurate, contextual AI answer using Ollama and the retrieved RAG documents.
  */
-async function synthesizeRagAnswer(
+export async function synthesizeRagAnswer(
   ollama: Ollama,
   model: string,
   query: string,
@@ -134,16 +135,15 @@ ${query}
 Answer:`;
 
   try {
-    const response = await ollama.chat({
+    const answer = await chatText(ollama, {
       model,
       messages: [{ role: "user", content: prompt }],
-      stream: false,
       options: {
         temperature: 0.2
       }
     });
 
-    return response.message.content.trim();
+    return answer.trim();
   } catch (err) {
     return `Retrieved ${items.length} relevant screen(s), but could not generate AI synthesis answer: ${(err as Error).message}`;
   }

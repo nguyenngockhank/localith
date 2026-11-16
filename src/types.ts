@@ -80,6 +80,7 @@ export interface CrawlReport {
     includeSubdomains: boolean;
     respectRobots: boolean;
     auth: { enabled: boolean };
+    generateKnowledge?: boolean;
     ollamaModel: string;
   };
   totals: {

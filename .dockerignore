@@ -1,0 +1,7 @@
+node_modules
+dist
+reports
+chroma_data
+.git
+.env
+*.md

@@ -31,6 +31,7 @@ export function buildCrawlReport(params: BuildCrawlReportParams): CrawlReport {
             includeSubdomains: options.includeSubdomains,
             respectRobots: options.respectRobots,
             auth: { enabled: options.auth.enabled },
+            generateKnowledge: options.generateKnowledge ?? false,
             ollamaModel: options.ollamaModel
         },
         totals: computeCrawlTotals(

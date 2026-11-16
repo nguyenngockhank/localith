@@ -1,14 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
-import { sanitizeCollectionName, parseChromaOptions } from "../src/rag/chromaClient.js";
-import {
-  buildKnowledgeChunks,
-  buildScreenChunk,
-  buildWorkflowChunks,
-  buildSiteOverviewChunk
-} from "../src/rag/chunkKnowledge.js";
-import { generateEmbeddings, indexKnowledgeToChroma } from "../src/rag/indexKnowledge.js";
+import { parseChromaOptions } from "../src/rag/chromaClient/chromaClient.js";
+import { sanitizeCollectionName } from "../src/rag/chromaClient/sanitizeCollectionName.js";
+import { buildKnowledgeChunks } from "../src/rag/chunkKnowledge/buildKnowledgeChunks.js";
+import { buildScreenChunk } from "../src/rag/chunkKnowledge/buildScreenChunk.js";
+import { buildWorkflowChunks } from "../src/rag/chunkKnowledge/buildWorkflowChunks.js";
+import { buildSiteOverviewChunk } from "../src/rag/chunkKnowledge/buildSiteOverviewChunk.js";
+import { generateEmbeddings, indexKnowledgeToChroma } from "../src/rag/indexKnowledge/indexKnowledge.js";
 import { searchRag, synthesizeRagAnswer } from "../src/rag/searchRag.js";
 import { handleRequest } from "../src/server.js";
 import type { CrawlKnowledgeResult, ScreenKnowledge } from "../src/types.js";

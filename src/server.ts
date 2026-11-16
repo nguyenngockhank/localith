@@ -2,6 +2,7 @@ import http from "node:http";
 import fs from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import "dotenv/config";
 import { generateCrawlKnowledge } from "./knowledge/generateScreenKnowledge.js";
 import { indexKnowledgeToChroma } from "./rag/indexKnowledge/indexKnowledge.js";
@@ -11,6 +12,26 @@ import type { CrawlReport, CrawlKnowledgeResult, IndexKnowledgeOptions, SearchRa
 
 const PORT = Number(process.env.PORT || 3000);
 const REPORTS_DIR = path.join(process.cwd(), "reports");
+const UI_FILE = fileURLToPath(new URL("../public/index.html", import.meta.url));
+
+/**
+ * Maps a report id from the URL to its directory under reports/.
+ * Returns null for ids that could escape the reports directory.
+ */
+export function resolveReportDir(reportId: string): string | null {
+  if (!/^[A-Za-z0-9._-]+$/.test(reportId) || reportId === "." || reportId === "..") return null;
+  return path.join(REPORTS_DIR, reportId);
+}
+
+async function sendUi(res: http.ServerResponse): Promise<void> {
+  try {
+    const html = await readFile(UI_FILE, "utf8");
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
+    res.end(html);
+  } catch {
+    sendText(res, 500, "Web UI file public/index.html is missing.");
+  }
+}
 
 function sendJson(res: http.ServerResponse, status: number, data: unknown): void {
   res.writeHead(status, {
@@ -94,6 +115,13 @@ export async function handleRequest(req: http.IncomingMessage, res: http.ServerR
   const method = req.method ?? "GET";
 
   try {
+    // 0. Web UI: /ui always, and / when a browser asks for HTML
+    const wantsHtml = (req.headers.accept ?? "").includes("text/html");
+    if (method === "GET" && (pathname === "/ui" || pathname === "/ui/" || (pathname === "/" && wantsHtml))) {
+      await sendUi(res);
+      return;
+    }
+
     // 1. Root API Discovery / Help
     if (pathname === "/" && method === "GET") {
       sendJson(res, 200, {
@@ -102,7 +130,9 @@ export async function handleRequest(req: http.IncomingMessage, res: http.ServerR
         endpoints: [
           { method: "POST", path: "/api/knowledge", description: "Generate screen knowledge and keywords from crawl result." },
           { method: "POST", path: "/api/analyze", description: "Alias for /api/knowledge." },
+          { method: "GET", path: "/ui", description: "Web UI: browse reports, screen map, and ask questions." },
           { method: "GET", path: "/api/reports", description: "List available crawl reports." },
+          { method: "GET", path: "/api/reports/:id", description: "Get crawl settings, totals and page list for a report run." },
           { method: "GET", path: "/api/reports/:id/knowledge", description: "Get saved knowledge for a specific report run." },
           { method: "POST", path: "/api/reports/:id/knowledge", description: "Generate knowledge for a specific report run." },
           { method: "POST", path: "/api/rag/index", description: "Index knowledge.json into ChromaDB using nomic-embed-text." },
@@ -140,7 +170,7 @@ export async function handleRequest(req: http.IncomingMessage, res: http.ServerR
         ollamaUrl,
         ollamaConnected: ollamaOk,
         chromaConnected: chromaOk,
-        defaultModel: process.env.OLLAMA_MODEL ?? "qwen3.5:4b",
+        defaultModel: process.env.OLLAMA_MODEL ?? "qwen3:4b",
         defaultEmbedModel: process.env.OLLAMA_EMBED_MODEL ?? "nomic-embed-text"
       });
       return;
@@ -178,11 +208,50 @@ export async function handleRequest(req: http.IncomingMessage, res: http.ServerR
       return;
     }
 
+    // 3b. Report overview: GET /api/reports/:id
+    const reportMatch = pathname.match(/^\/api\/reports\/([^/]+)$/);
+    if (reportMatch && method === "GET") {
+      const reportId = decodeURIComponent(reportMatch[1]!);
+      const targetDir = resolveReportDir(reportId);
+      if (!targetDir) {
+        sendJson(res, 400, { error: "Invalid report id." });
+        return;
+      }
+      const reportPath = path.join(targetDir, "report.json");
+      if (!fs.existsSync(reportPath)) {
+        sendJson(res, 404, { error: `Report "${reportId}" not found.` });
+        return;
+      }
+      const report = JSON.parse(await readFile(reportPath, "utf8")) as CrawlReport;
+      sendJson(res, 200, {
+        id: reportId,
+        startUrl: report.startUrl,
+        startedAt: report.startedAt,
+        finishedAt: report.finishedAt,
+        settings: report.settings,
+        totals: report.totals,
+        hasKnowledge: fs.existsSync(path.join(targetDir, "knowledge.json")),
+        pages: (report.pages ?? []).map((page) => ({
+          url: page.url,
+          finalUrl: page.finalUrl,
+          depth: page.depth,
+          status: page.status,
+          title: page.title,
+          pattern: page.pattern
+        }))
+      });
+      return;
+    }
+
     // 4. Specific Report Knowledge: GET /api/reports/:id/knowledge
     const reportKnowledgeMatch = pathname.match(/^\/api\/reports\/([^/]+)\/knowledge$/);
     if (reportKnowledgeMatch) {
       const reportId = decodeURIComponent(reportKnowledgeMatch[1]!);
-      const targetDir = path.join(REPORTS_DIR, reportId);
+      const targetDir = resolveReportDir(reportId);
+      if (!targetDir) {
+        sendJson(res, 400, { error: "Invalid report id." });
+        return;
+      }
       const knowledgePath = path.join(targetDir, "knowledge.json");
       const reportPath = path.join(targetDir, "report.json");
 
@@ -374,10 +443,12 @@ export function createKnowledgeServer(): http.Server {
 }
 
 // Start server if executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+// pathToFileURL keeps this check working on Windows (file:///C:/...) as well as POSIX
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const server = createKnowledgeServer();
   server.listen(PORT, () => {
     console.log(`\n🚀 Local Website Scanner - AI Knowledge & RAG Server running on http://localhost:${PORT}`);
+    console.log(`   Web UI                 -> http://localhost:${PORT}/ui`);
     console.log(`   POST /api/knowledge    -> Generate knowledge from crawl results`);
     console.log(`   POST /api/rag/index    -> Index knowledge into ChromaDB with nomic-embed-text`);
     console.log(`   POST /api/rag/search   -> Semantic search & AI answers from ChromaDB`);
